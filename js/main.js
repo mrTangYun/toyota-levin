@@ -4,7 +4,7 @@ function Game() {
 	//游戏时间(秒)
 	this.gameTime = 10;
 	//游戏中同时出现的车的数量
-	this.maxCarNumber = 3;
+	this.maxCarNumber = 1;
 
 
 	this.canvas = document.getElementById("bgCanvas");
@@ -114,6 +114,7 @@ function Game() {
 				$(".page-4").remove();
 				$(".page-5").show();
 				reader.readAsDataURL(file);
+				that.start();
 			}
 		});
 	};
@@ -513,7 +514,7 @@ function Game() {
 				if (that.state.w - that._clickDiff > 0) {
 					that.state.w = that.state.w - that._clickDiff;
 					that.state.h = that.state.w / that.rI;
-					that._clickDiff = that._clickDiff + .1;
+					that._clickDiff = that._clickDiff + .5;
 					that.draw();
 				} else {
 					that.isPlaying = false;
@@ -574,7 +575,7 @@ jQuery(document).ready(function($) {
 
 	$("#btnOk").click(function(event) {
 		/* Act on the event */
-		game.start();
+		//game.start();
 		// if (false) {
 
 		// } else {

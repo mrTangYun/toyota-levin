@@ -511,12 +511,15 @@ function Game() {
 			if (that.isClicked) {
 				//如果被点击了，处理消失动画
 				//console.log(that.state);
-				if (that.state.w - that._clickDiff > 0) {
+				if (that.state.w - that._clickDiff > 15) {
 					that.state.w = that.state.w - that._clickDiff;
 					that.state.h = that.state.w / that.rI;
 					that._clickDiff = that._clickDiff + .5;
 					that.draw();
 				} else {
+					var ctx = that._ctx
+						//console.log(state)
+					ctx.clearRect(0, 0, that.stage.width, that.stage.height);
 					that.isPlaying = false;
 					arrayCarsplaying.splice($.inArray(that._folderIndex, arrayCarsplaying), 1);
 					//$.inArray( value, array [, fromIndex ] )

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>levin</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="full-screen" content="true"/>
+    <meta name="screen-orientation" content="portrait"/>
+    <meta name="x5-fullscreen" content="true"/>
+    <meta name="360-fullscreen" content="true"/>
+    <link rel="stylesheet" type="text/css" href="style/css.css">
+</head>
+<body>
+
+<section class="page-4">
+	<img src="image/P4.jpg" width="100%">
+	<div class="btn_Camera"></div>
+</section>
+
+<section class="page-5">
+	<canvas id="bgCanvas"></canvas>
+	<div class="count-down" id="floatCountDown">
+		<img src="image/p7/numberBG.png" width="100%">
+		<span class="count-down-span" id="countDownSpan">3</span>
+	</div>
+	<div class="page5_bottom_tips" id="page5BottomTips">
+		<div class="button-area" id="buttonArea">
+			<div class="btn" id="btnOk">
+				<img src="image/p6/btn-1.png" width="100%">
+			</div>
+			<div class="btn" id="btnCancel">
+				<img src="image/p6/btn-2.png" width="100%">
+			</div>
+		</div>
+		<div class="tips-start-text" id="tipsStartText">
+			十二生肖将在<span id="countDownTips">3</span>秒后出现<br/>请猛戳屏幕，进行抓捕！！
+		</div>
+
+	</div>
+	<div class="score-top-left" id="gameSore">
+		SCORE : <span id="myScore">06<span>
+	</div>
+
+	<div class="count-down-top-right" id="timerGame"><span id="timerGameM">00</span> : <span id="timerGameS"></span></div>
+</section>
+
+<section class="page-9" id="gameOverPopWindow">
+	<div class="container">	
+			<div class="border"></div>
+		<div class="box">	
+				<div class="content">
+					<div class="text-style1">
+						<p>恭喜您！</p>
+						<p>抓捕生肖数量<span id="popScore">0</span>个</p>
+					</div>
+					<div class="text-style2">
+							奖项设置：<br/>①特等奖：千元油卡<br/>②一等奖：行车记录仪<br/>③二等奖：车用四件套<br/>④三等奖：优酷/爱奇艺会员
+					</div>
+					<div class="button-area-result">
+						<div class="button" id="btn-getLottery">
+							<img src="image/p9/btn-getLottery.png" width="100%">
+						</div>
+						<div class="button" id="btn-playAgain">
+							<img src="image/p9/btn-playAgian.png" width="100%">
+						</div>
+					</div>
+				</div>
+		</div>
+	</div>
+</section>
+<script src="js/jquery.min.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

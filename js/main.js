@@ -94,7 +94,7 @@ function Game() {
 		//更新阶段将呈现下一帧
 		//stage.update();
 		createjs.Ticker.addEventListener('tick', tick); //刷新
-		createjs.Ticker.setFPS(15); //每秒调用tick函数 3次 控制动画快慢
+		createjs.Ticker.setFPS(10); //每秒调用tick函数 3次 控制动画快慢
 		function tick(e) { //tick函数
 			that.stage.update(event); //更新舞台 
 		}
@@ -153,27 +153,137 @@ function Game() {
 				cImg.f = 2;
 			}
 			//console.log(img, cImg.x, cImg.y, cImg.w, cImg.h);
-			that.ctx.drawImage(img, cImg.x, cImg.y, cImg.w, cImg.h);
+			//
+			that.ctx.save();
+			that.ctx.translate(that.WIDTH, 0);
+			that.ctx.rotate(90 * Math.PI / 180);
+
+			that.ctx.drawImage(img, cImg.x + 50, cImg.y, cImg.w + 50, cImg.h);
+			//that.ctx.drawImage(img, 0, 0, cImg.w, cImg.h);
+			//that.ctx.drawImage(img, cImg.x, cImg.y, cImg.w, cImg.h, 0, 0, WIDTH, HEIGHT);
+			that.ctx.restore();
 		}
 		$("#hiddenCamera").on('change', function(event) {
 			event.preventDefault();
 			/* Act on the event */
 			var file = $(this)[0].files[0];
-			var reader = new FileReader();
 
-			reader.addEventListener("load", function() {
-				//preview.src = reader.result;
-				that.loadPic.src = reader.result;
-			}, false);
-			if (file && /image\/\w+/.test(file.type)) {
-				$(".page-4").remove();
-				$(".page-5").show();
-				reader.readAsDataURL(file);
-				that.start();
-			} else {
-				return false;
+			//图片方向角 added by lzk  
+			var Orientation = null;
+
+			if (file) {
+				console.log("正在上传,请稍后...");
+				var rFilter = /^(image\/jpeg|image\/png)$/i; // 检查图片格式 
+				if (!rFilter.test(file.type)) {
+					//showMyTips("请选择jpeg、png格式的图片", false); 
+					return;
+				}
+				// var URL = URL || webkitURL; 
+				//获取照片方向角属性，用户旋转控制 
+				EXIF.getData(file, function() {
+					// //alert(EXIF.pretty(this)); 
+					EXIF.getAllTags(this);
+					////alert(EXIF.getTag(this, 'Orientation'));  
+					Orientation = EXIF.getTag(this, 'Orientation');
+					//return; 
+				});
+
+				var oReader = new FileReader();
+				oReader.onload = function(e) {
+					//var blob = URL.createObjectURL(file); 
+					//_compress(blob, file, basePath); 
+					var image = new Image();
+					image.src = e.target.result;
+					image.onload = function() {
+						var expectWidth = this.naturalWidth;
+						var expectHeight = this.naturalHeight;
+
+						if (this.naturalWidth > this.naturalHeight && this.naturalWidth > 800) {
+							expectWidth = 800;
+							expectHeight = expectWidth * this.naturalHeight / this.naturalWidth;
+						} else if (this.naturalHeight > this.naturalWidth && this.naturalHeight > 1200) {
+							expectHeight = 1200;
+							expectWidth = expectHeight * this.naturalWidth / this.naturalHeight;
+						}
+						var canvas = document.createElement("canvas");
+						var ctx = canvas.getContext("2d");
+						canvas.width = expectWidth;
+						canvas.height = expectHeight;
+						ctx.drawImage(this, 0, 0, expectWidth, expectHeight);
+						var base64 = null;
+						//修复ios 
+						if (navigator.userAgent.match(/iphone/i)) {
+							console.log('iphone');
+							////alert(expectWidth + ',' + expectHeight); 
+							//如果方向角不为1，都需要进行旋转 added by lzk 
+							if (Orientation != "" && Orientation != 1) {
+								//alert('旋转处理');
+								switch (Orientation) {
+									case 6: //需要顺时针（向左）90度旋转 
+										//alert('需要顺时针（向左）90度旋转');
+										rotateImg(this, 'left', canvas);
+										break;
+									case 8: //需要逆时针（向右）90度旋转 
+										//alert('需要顺时针（向右）90度旋转');
+										rotateImg(this, 'right', canvas);
+										break;
+									case 3: //需要180度旋转 
+										//alert('需要180度旋转');
+										rotateImg(this, 'right', canvas); //转两次 
+										rotateImg(this, 'right', canvas);
+										break;
+								}
+							}
+
+							/*var mpImg = new MegaPixImage(image); 
+							mpImg.render(canvas, { 
+							    maxWidth: 800, 
+							    maxHeight: 1200, 
+							    quality: 0.8, 
+							    orientation: 8 
+							});*/
+							base64 = canvas.toDataURL("image/jpeg", 0.8);
+						} else if (navigator.userAgent.match(/Android/i)) { // 修复android 
+							var encoder = new JPEGEncoder();
+							base64 = encoder.encode(ctx.getImageData(0, 0, expectWidth, expectHeight), 80);
+						} else {
+							////alert(Orientation); 
+							if (Orientation != "" && Orientation != 1) {
+								////alert('旋转处理'); 
+								switch (Orientation) {
+									case 6: //需要顺时针（向左）90度旋转 
+										//alert('需要顺时针（向左）90度旋转');
+										rotateImg(this, 'left', canvas);
+										break;
+									case 8: //需要逆时针（向右）90度旋转 
+										//alert('需要顺时针（向右）90度旋转');
+										rotateImg(this, 'right', canvas);
+										break;
+									case 3: //需要180度旋转 
+										//alert('需要180度旋转');
+										rotateImg(this, 'right', canvas); //转两次 
+										rotateImg(this, 'right', canvas);
+										break;
+								}
+							}
+
+							base64 = canvas.toDataURL("image/jpeg", 0.8);
+						}
+						//uploadImage(base64);
+						// 
+						//$("#myImage").attr("src", base64);
+						$(".page-5").css({
+							'background-image': 'url(' + base64 + ')'
+						});
+						$(".page-4").remove();
+						$(".page-5").show();
+						that.start();
+					};
+				};
+				oReader.readAsDataURL(file);
 			}
 		});
+
 	};
 	this.showCamera = function() {
 		$("#hiddenCamera").click();
@@ -206,8 +316,6 @@ function Game() {
 	this.showScore = function() {
 		$("#myScore").text(this.iscore >= 10 ? this.iscore : 0 + this.iscore.toString());
 	};
-
-
 
 	this._touchstartHandler = function(event) {
 		var x, y,
@@ -244,7 +352,7 @@ function Game() {
 		//
 		var json =
 			[{
-				totalTime: 1800,
+				totalTime: 1300,
 				car: {
 					startState: {
 						w: .661,
@@ -259,7 +367,7 @@ function Game() {
 				},
 				animal: 2
 			}, {
-				totalTime: 900,
+				totalTime: 1000,
 				car: {
 					startState: {
 						w: .696,
@@ -274,7 +382,7 @@ function Game() {
 				},
 				animal: 3
 			}, {
-				totalTime: 1050,
+				totalTime: 1150,
 				car: {
 					startState: {
 						w: .496,
@@ -289,7 +397,7 @@ function Game() {
 				},
 				animal: 3
 			}, {
-				totalTime: 800,
+				totalTime: 1300,
 				car: {
 					startState: {
 						w: .526,
@@ -304,7 +412,7 @@ function Game() {
 				},
 				animal: 2
 			}, {
-				totalTime: 1200,
+				totalTime: 1250,
 				car: {
 					startState: {
 						w: .33,
@@ -500,6 +608,12 @@ function Game() {
 			w: 0,
 			h: 0
 		};
+		this.state = {
+			x: 0,
+			y: 0,
+			w: 0,
+			h: 0
+		};
 
 		this.init = function() {
 			var that = this;
@@ -522,29 +636,7 @@ function Game() {
 			for (var i = 0; i < that._animalNumber; i++) {
 				that.carImges[i].src = that._folder + i + '.png';
 			}
-
 			return false;
-			// } else {
-
-			// 	that.carImg.onload = function() {
-			// 		var rI = this.width / this.height;
-			// 		that.rI = rI;
-			// 		that.ready = true;
-			// 		//把百分比转化为像素
-			// 		that.startState.h = that.startState.w / rI;
-			// 		that.endState.h = that.endState.w / rI;
-			// 	}
-			// 	that.carImg.src = that.carImgUrl;
-			// }
-
-			// if (that._folderIndex == 0) {
-			// 	that.animals.push(new Image());
-			// 	that.animals[0].src = that._folder + '01.png';
-			// 	that.animals[0].onload = function() {
-			// 		this.ready = true;
-			// 		this.r = this.width / this.height;
-			// 	}
-			// }
 		};
 		this.start = function() {
 			var that = this;
@@ -559,6 +651,12 @@ function Game() {
 				w: that.startState.w,
 				h: that.startState.h
 			};
+			that._state = {
+				x: that.state.x,
+				y: that.state.y,
+				w: that.state.w,
+				h: that.state.h
+			};
 			that._timerStart = new Date();
 			that.draw();
 
@@ -568,16 +666,9 @@ function Game() {
 			var that = this;
 			var _timerNow = new Date();
 			//console.log(that._folderIndex);
+			var ctx = that._ctx;
 			if (that.isClicked) {
-				//如果被点击了，处理消失动画
-				//console.log(that.state);
-				//that.animationBomb.gotoAndPlay(0);
-				// if (that.state.w - that._clickDiff > 15) {
-				// 	that.state.w = that.state.w - that._clickDiff;
-				// 	that.state.h = that.state.w / that.rI;
-				// 	that._clickDiff = that._clickDiff + .5;
-				// 	that.draw();
-				// } else {
+				ctx.clearRect(0, 0, that.stage.width, that.stage.height);
 				if (animationBomb) {
 					//console.dir(animationBomb);
 					animationBomb.x = that.state.x;
@@ -587,22 +678,22 @@ function Game() {
 					createjs.Sound.stop(carSoundID);
 					createjs.Sound.play(disappearSoundID);
 				}
-				var ctx = that._ctx;
-				//console.log(state)
-				ctx.clearRect(0, 0, that.stage.width, that.stage.height);
 				that.isPlaying = false;
 				arrayCarsplaying.splice($.inArray(that._folderIndex, arrayCarsplaying), 1);
-				//$.inArray( value, array [, fromIndex ] )
-				//that.carsplaying 
-				//}
 				return false;
 			}
 			if (_timerNow - that._timerStart > that._totalTime) {
 				that.isPlaying = false;
 				createjs.Sound.stop(carSoundID);
 				arrayCarsplaying.splice($.inArray(that._folderIndex, arrayCarsplaying), 1);
+				ctx.clearRect(0, 0, that.stage.width, that.stage.height);
 			} else {
-
+				that._state = {
+					x: that.state.x,
+					y: that.state.y,
+					w: that.state.w,
+					h: that.state.h
+				};
 				var _i = (_timerNow - that._timerStart) / that._totalTime;
 				that.state.w = that.startState.w + (that.endState.w - that.startState.w) * _i;
 				that.state.h = that.startState.h + (that.endState.h - that.startState.h) * _i;
@@ -616,8 +707,9 @@ function Game() {
 			var that = this;
 			var ctx = that._ctx,
 				state = that.state;
+			_lastState = that._state;
 			//console.log(state)
-			ctx.clearRect(0, 0, that.stage.width, that.stage.height);
+			ctx.clearRect(_lastState.x - _lastState.w / 2, _lastState.y - _lastState.h / 2, _lastState.w, _lastState.h);
 			//画车
 			ctx.save();
 			ctx.translate(state.x, state.y);
@@ -669,3 +761,66 @@ jQuery(document).ready(function($) {
 
 
 });
+
+
+//对图片旋转处理
+function rotateImg(img, direction, canvas) {
+	////alert(img); 
+	//最小与最大旋转方向，图片旋转4次后回到原方向   
+	var min_step = 0;
+	var max_step = 3;
+	//var img = document.getElementById(pid);   
+	if (img == null) return;
+	//img的高度和宽度不能在img元素隐藏后获取，否则会出错   
+	var height = img.height;
+	var width = img.width;
+	//var step = img.getAttribute('step');   
+	var step = 2;
+	if (step == null) {
+		step = min_step;
+	}
+	if (direction == 'right') {
+		step++;
+		//旋转到原位置，即超过最大值   
+		step > max_step && (step = min_step);
+	} else {
+		step--;
+		step < min_step && (step = max_step);
+	}
+	//img.setAttribute('step', step);   
+	/*var canvas = document.getElementById('pic_' + pid);   
+	if (canvas == null) {   
+	    img.style.display = 'none';   
+	    canvas = document.createElement('canvas');   
+	    canvas.setAttribute('id', 'pic_' + pid);   
+	    img.parentNode.appendChild(canvas);   
+	}  */
+	//旋转角度以弧度值为参数   
+	var degree = step * 90 * Math.PI / 180;
+	var ctx = canvas.getContext('2d');
+	switch (step) {
+		case 0:
+			canvas.width = width;
+			canvas.height = height;
+			ctx.drawImage(img, 0, 0);
+			break;
+		case 1:
+			canvas.width = height;
+			canvas.height = width;
+			ctx.rotate(degree);
+			ctx.drawImage(img, 0, -height);
+			break;
+		case 2:
+			canvas.width = width;
+			canvas.height = height;
+			ctx.rotate(degree);
+			ctx.drawImage(img, -width, -height);
+			break;
+		case 3:
+			canvas.width = height;
+			canvas.height = width;
+			ctx.rotate(degree);
+			ctx.drawImage(img, -width, 0);
+			break;
+	}
+}

@@ -78,6 +78,9 @@ section{
 	top: 0;
 	left: 0;
 	display: none;
+	background-position: center;
+	background-size: auto 100%;
+	background-repeat: no-repeat;
 }
 .page5_bottom_tips{
 	position: absolute;
@@ -159,6 +162,9 @@ section{
 	position: absolute;
 	top :0;
 	left: 0;
+}
+#bgCanvas{
+	display: none;
 }
 
 .score-top-left{

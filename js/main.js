@@ -1,12 +1,19 @@
+var animationBomb = null;
+var disappearSoundID = "disappear";
+var carSoundID = "car";
+createjs.Sound.registerSound("./image/p7/xiaoshi/hit.mp3", disappearSoundID);
+createjs.Sound.registerSound("./image/p7/xiaoshi/car.mp3", carSoundID);
+
 function Game() {
 	//游戏开始前的倒计时
 	this.icountDown = 3;
 	//游戏时间(秒)
-	this.gameTime = 10;
+	this.gameTime = 15;
 	//游戏中同时出现的车的数量
 	this.maxCarNumber = 1;
 
-
+	this.stage = null;
+	this.animationBomb = null;
 	this.canvas = document.getElementById("bgCanvas");
 	this.ctx = this.canvas.getContext("2d");
 	this.canvases = [this.canvas];
@@ -31,12 +38,13 @@ function Game() {
 		that.WIDTH = $(window).outerWidth();
 		that.HEIGHT = $(window).outerHeight()
 
-		$("#bgCanvas").after('<canvas id="canvas-0" class="game-canvas"></canvas><canvas id="canvas-1" class="game-canvas"></canvas><canvas id="canvas-2" class="game-canvas"></canvas><canvas id="canvas-3" class="game-canvas"></canvas><canvas id="canvas-4" class="game-canvas"></canvas>');
+		$("#bgCanvas").after('<canvas id="canvas-0" class="game-canvas"></canvas><canvas id="canvas-1" class="game-canvas"></canvas><canvas id="canvas-2" class="game-canvas"></canvas><canvas id="canvas-3" class="game-canvas"></canvas><canvas id="canvas-4" class="game-canvas"></canvas><canvas id="canvas-5" class="game-canvas"></canvas>');
 		that.canvases.push(document.getElementById("canvas-0"));
 		that.canvases.push(document.getElementById("canvas-1"));
 		that.canvases.push(document.getElementById("canvas-2"));
 		that.canvases.push(document.getElementById("canvas-3"));
 		that.canvases.push(document.getElementById("canvas-4"));
+		that.canvases.push(document.getElementById("canvas-5"));
 
 		for (var i = 0; i < that.canvases.length; i++) {
 			that.canvases[i].width = that.WIDTH;
@@ -44,7 +52,54 @@ function Game() {
 			that.ctxes.push(that.canvases[i].getContext("2d"));
 		}
 		that.bindEvent();
+
+		//创建一个阶段，得到一个参考的画布
+		that.stage = new createjs.Stage("canvas-5");
+		// circle = new createjs.Shape();
+		// circle.graphics.beginFill("red").drawCircle(0, 0, 40);
+		// //形状实例的设置位置
+		// circle.x = circle.y = 50;
+		//添加形状实例到舞台显示列表
+		//stage.addChild(circle);
+
+		var data = {
+			images: ["image/p7/xiaoshi/b.png"],
+			frames: {
+				width: 138,
+				height: 100,
+				count: 11,
+				regX: 69,
+				regY: 50,
+				spacing: 0,
+				margin: 0
+			},
+			animations: {
+				bomb: [0, 10]
+			}
+		};
+		var spriteSheet = new createjs.SpriteSheet(data);
+		animationBomb = new createjs.Sprite(spriteSheet);
+		animationBomb.x = animationBomb.y = 100;
+		animationBomb.scaleX = animationBomb.scaleY = 1;
+		animationBomb.visible = false;
+		animationBomb.addEventListener('animationend', function() {
+			//console.log("播放完毕");
+			animationBomb.visible = false;
+			animationBomb.stop();
+		});
+		that.stage.addChild(animationBomb);
+		//that.animationBomb = animationBomb;
+
+		//animationBomb.gotoAndPlay(0);
+		//更新阶段将呈现下一帧
+		//stage.update();
+		createjs.Ticker.addEventListener('tick', tick); //刷新
+		createjs.Ticker.setFPS(15); //每秒调用tick函数 3次 控制动画快慢
+		function tick(e) { //tick函数
+			that.stage.update(event); //更新舞台 
+		}
 	};
+
 	this.bindEvent = function() {
 		var that = this;
 
@@ -115,6 +170,8 @@ function Game() {
 				$(".page-5").show();
 				reader.readAsDataURL(file);
 				that.start();
+			} else {
+				return false;
 			}
 		});
 	};
@@ -169,6 +226,7 @@ function Game() {
 		this.touch.isParessed = true;
 		this.touch.x = x;
 		this.touch.y = y;
+
 		//console.log(touch.x, touch.y);
 	};
 	this._touchendHandler = function(event) {
@@ -201,7 +259,7 @@ function Game() {
 				},
 				animal: 2
 			}, {
-				totalTime: 1200,
+				totalTime: 900,
 				car: {
 					startState: {
 						w: .696,
@@ -216,7 +274,7 @@ function Game() {
 				},
 				animal: 3
 			}, {
-				totalTime: 1350,
+				totalTime: 1050,
 				car: {
 					startState: {
 						w: .496,
@@ -231,7 +289,7 @@ function Game() {
 				},
 				animal: 3
 			}, {
-				totalTime: 1100,
+				totalTime: 800,
 				car: {
 					startState: {
 						w: .526,
@@ -246,7 +304,7 @@ function Game() {
 				},
 				animal: 2
 			}, {
-				totalTime: 1500,
+				totalTime: 1200,
 				car: {
 					startState: {
 						w: .33,
@@ -318,6 +376,8 @@ function Game() {
 							if (Math.random() < .3) {
 								that.carsplaying.push(i);
 								that.cars[i].start();
+
+								createjs.Sound.play(carSoundID);
 							}
 						}
 					} else {
@@ -346,7 +406,7 @@ function Game() {
 
 	this.gameOver = function() {
 		var that = this;
-		for (var i = 1; i < that.ctxes.length; i++) {
+		for (var i = 1; i < that.ctxes.length - 1; i++) {
 			that.ctxes[i].clearRect(0, 0, that.WIDTH, that.HEIGHT);
 		}
 		if (that.iscore > 0) {
@@ -376,13 +436,13 @@ function Game() {
 			return false;
 		}
 		//console.log(that.touch);
-		for (var i = 1; i < that.ctxes.length; i++) {
+		for (var i = 1; i < that.ctxes.length - 1; i++) {
 			if (that.cars[i - 1].isClicked) {
 				continue;
 			}
 			var imgData = that.ctxes[i].getImageData(that.touch.x, that.touch.y, 1, 1);
 			var hasHit = false;
-			for (var j = 0; j < 3; j++) {
+			for (var j = 0; j < 4; j++) {
 				if (imgData.data[j] > 0) {
 					hasHit = true;
 					break;
@@ -511,24 +571,35 @@ function Game() {
 			if (that.isClicked) {
 				//如果被点击了，处理消失动画
 				//console.log(that.state);
-				if (that.state.w - that._clickDiff > 15) {
-					that.state.w = that.state.w - that._clickDiff;
-					that.state.h = that.state.w / that.rI;
-					that._clickDiff = that._clickDiff + .5;
-					that.draw();
-				} else {
-					var ctx = that._ctx
-						//console.log(state)
-					ctx.clearRect(0, 0, that.stage.width, that.stage.height);
-					that.isPlaying = false;
-					arrayCarsplaying.splice($.inArray(that._folderIndex, arrayCarsplaying), 1);
-					//$.inArray( value, array [, fromIndex ] )
-					//that.carsplaying 
+				//that.animationBomb.gotoAndPlay(0);
+				// if (that.state.w - that._clickDiff > 15) {
+				// 	that.state.w = that.state.w - that._clickDiff;
+				// 	that.state.h = that.state.w / that.rI;
+				// 	that._clickDiff = that._clickDiff + .5;
+				// 	that.draw();
+				// } else {
+				if (animationBomb) {
+					//console.dir(animationBomb);
+					animationBomb.x = that.state.x;
+					animationBomb.y = that.state.y;
+					animationBomb.visible = true;
+					animationBomb.gotoAndPlay(0);
+					createjs.Sound.stop(carSoundID);
+					createjs.Sound.play(disappearSoundID);
 				}
+				var ctx = that._ctx;
+				//console.log(state)
+				ctx.clearRect(0, 0, that.stage.width, that.stage.height);
+				that.isPlaying = false;
+				arrayCarsplaying.splice($.inArray(that._folderIndex, arrayCarsplaying), 1);
+				//$.inArray( value, array [, fromIndex ] )
+				//that.carsplaying 
+				//}
 				return false;
 			}
 			if (_timerNow - that._timerStart > that._totalTime) {
 				that.isPlaying = false;
+				createjs.Sound.stop(carSoundID);
 				arrayCarsplaying.splice($.inArray(that._folderIndex, arrayCarsplaying), 1);
 			} else {
 
@@ -587,6 +658,14 @@ jQuery(document).ready(function($) {
 		// 	game._start();
 		// }
 	});
+
+	// if (false) {
+
+	// } else {
+
+	// 	game.loadPic.src = "./image/game.jpg";
+	// 	game._start();
+	// }
 
 
 });
